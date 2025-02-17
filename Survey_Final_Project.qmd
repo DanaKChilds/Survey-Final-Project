@@ -1,0 +1,211 @@
+---
+title: "Researching Changes in Perception of Academic Support Between People Who Recieve Differently Framed Information"
+subtitle: "DACSS 602 (Fall 2024)"
+author: Dana Childs
+format: 
+  html:
+    embed-resources: true
+    toc: true
+    toc-depth: 2
+    toc-title: Contents
+    toc-location: left
+    html-math-method: katex
+    theme: flatly
+    smooth-scroll: true
+    link-external-icon: true
+    link-external-newwindow: true
+    citations-hover: true
+    footnotes-hover: true
+    font-size: 80%
+---
+
+# Introduction
+
+This study explores attitudes towards the current state of academic support for students diagnosed with learning disabilities. Prior to receiving questions about their perceptions, respondents were presented with positively, neutrally, or negatively framed information. I sought to understand if learning more information about academic support for those diagnosed with learning disabilities would affect these perceptions. Furthermore, I asked respondents if they had personally or had a family member diagnosed with a learning disability to see if personal experience had any impact on their perceptions.
+
+# Methodology
+
+This study employed a between-subjects experimental design where participants were divided between three treatment groups, those that received positively, negatively, and neutrally framed information about the state of academic support for those diagnosed with learning disabilities. The treatment groups were each exposed to a statistic about this topic from the U.S. Department of Education. Positively framed information detailed high graduation rates, neutrally framed information noted the number of students receiving support, and negatively framed information, stated that less than half of states and territories were meeting federal requirements. The outcome variable in this study was respondents’ perceptions of the adequacy of academic support and whether or not participants supported further resources being devoted to this support. These responses were collected in the form of Likert scales. The survey received 211 responses out of 250 contacted. Additionally, 21 participants reported having been diagnosed with a learning disability, 73 participants reported having a family member that had been diagnosed with a learning disability, and 117 participants reported neither.
+
+Steps taken to clean the data are as follows: 
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+data <- read.csv("Survey_Data.csv")
+
+data$experience <- ifelse(data$g10q1 == "Neither", 0, 1)
+# 0 = no experience
+# 1 = personal/family experience
+
+data <- data |>
+  mutate(
+    g10q1_new = recode(
+      g10q1,
+      `I have been diagnosed with a learning disability.` = "Personal",
+      `I have not been diagnosed with a learning disability, but a family member has been diagnosed with a learning disability.` 
+      = "Family"
+    )
+    )
+
+data <- data |>
+  mutate(
+    IV = recode(
+      IV,
+      t1 = "t1 (Positive)",
+      t2 = "t2 (Neutral)",
+      t3 = "t3 (Negative)"
+    )
+  )
+
+unique(data$g10q3_1)
+
+data <- data |>
+  mutate(g10q3_1_numeric = case_when(
+    g10q3_1 == "Strongly Disagree" ~ 1,
+    g10q3_1 == "Disagree" ~ 2,
+    g10q3_1 == "Neutral" ~ 3,
+    g10q3_1 == "Agree" ~ 4,
+    g10q3_1 == "Strongly Agree" ~ 5
+  )
+  )
+
+```
+
+# Analysis
+
+I decided to use an ANOVA test because it allows for a direct comparison across the three treatment groups: those exposed to positively, neutrally, and negatively framed information. The results of this test will allow analysis of how hearing information with different framing affects perceptions of academic support for those diagnosed with learning disabilities and if they would support additional resources to that end. If the results of the ANOVA test are statistically significant, additional testing can be preformed to provide more detailed insights. 
+
+```{r}
+anova_g10q2_1 <- aov(g10q2_1 ~ IV, data = data)
+anova_g10q2_2 <- aov(g10q2_2 ~ IV, data = data)
+anova_g10q2_3 <- aov(g10q2_3 ~ IV, data = data)
+anova_g10q3_1 <- aov(g10q3_1_numeric ~ IV, data = data)
+
+# Summarize the ANOVA results
+print("Perceptions of adequacy of academic services for those with learning disabilities in the United States:")
+summary(anova_g10q2_1)
+
+print("Perceptions of adequacy of academic services for those with learning disabilities in the Your State:")
+summary(anova_g10q2_2)
+
+print("Perceptions of adequacy of academic services for those with learning disabilities in the Your City/Town:")
+summary(anova_g10q2_3)
+
+print("Additional resources to improve quality of academic services for those with learning disabilities:")
+summary(anova_g10q3_1)
+
+```
+# Results
+
+As you can see above, the p-values are 0.222, 0.316, 0.613 for services in the United States, the respondent's state, and the respondent's city/town respectively. It is .956 for the question asking about increased resources. 
+
+# Findings
+ 
+Given the p-values from the ANOVA test, I will now decide whether the null hypothesis can be rejected or not. Going off the steps for hypothesis in Lecture 10:
+
+1. I chose a significance level of .05, which seems to be the most commonly used alpha value to control for any Type 1 error.
+2. The test statistic in the ANOVA test is the F test statistic which I will use to compare the null hypothesis. This F tests statistic measures variance between groups relative to the variance within groups, determining whether groups have statistically significant differences.
+3. The sampling distribution of the F test statistic follows the "Degrees of Freedom" metric. It is 2 between groups and 208 within groups.
+4. Given the chosen alpha value of .05, the critical values of F are 2.5% and the non-critical regions are 95%. The calculation for the F test statistic is as follows: 
+
+```{r}
+
+# Define the degrees of freedom
+df1 <- 2    # Between-groups degrees of freedom
+df2 <- 208  # Within-groups degrees of freedom
+
+# Calculate the critical F-value
+critical_value <- qf(.95, df1, df2)
+
+# Print the critical F-value
+print(critical_value)
+
+```
+4 (cont). With the critical value being 3.039296, I know that any F value above this should lead to the rejection of the null hypothesis
+5. The F values were 1.517, 1.157, .491 for perceptions for the United States, the respondent's state, and the respondent's city or town respectively. It was .045 for the question asking about increased resources.
+6. Since none of the F values are higher than the critical value, I cannot reject the null hypothesis based upon this data. 
+7. Based upon the ANOVA test on the IV in this experiment, I cannot reject the null hypothesis that there are no differences in perceptions of the adequacy of academic support for individuals with learning disabilities or if additional resources should be committed to said support based upon the information respondents were presented with. 
+I applied an Analysis of Variance, or ANOVA, test to determine statistical difference between the three treatment groups. These tests found both that the p-values for all questions were greater than the alpha value of .05 and that the F-values were all lower than the critical value. Both of these findings support the conclusion that the null hypothesis cannot be rejected.
+
+```{r}
+
+# Boxplot for g10q2_1 across IV groups
+ggplot(data, aes(x = IV, y = g10q2_1, fill = IV)) +
+  geom_boxplot() +
+  labs(title = "Distribution of g10q2_1 across IV Groups",
+       x = "Treatment Groups",
+       y = "g10q2_1 Scores") +
+  theme_minimal()
+
+# Boxplot for g10q2_2 across IV groups
+ggplot(data, aes(x = IV, y = g10q2_2, fill = IV)) +
+  geom_boxplot() +
+  labs(title = "Distribution of g10q2_2 across IV Groups",
+       x = "Treatment Groups",
+       y = "g10q2_2 Scores") +
+  theme_minimal()
+
+# Boxplot for g10q2_3 across IV groups
+ggplot(data, aes(x = IV, y = g10q2_3, fill = IV)) +
+  geom_boxplot() +
+  labs(title = "Distribution of g10q2_3 across IV Groups",
+       x = "Treatment Groups",
+       y = "g10q2_3 Scores") +
+  theme_minimal()
+
+ggplot(data, aes(x = IV, y = g10q3_1_numeric, fill = IV)) +
+    geom_boxplot() +
+  labs(title = "Distribution of g10q3_1 across IV Groups",
+       x = "Treatment Groups",
+       y = "g10q2_3 Scores") +
+  theme_minimal()
+
+```
+
+# Discussion
+The results of the ANOVA tests indicate that there was no difference in perception or support for academic services for those diagnosed with learning disabilities based upon the information presented to respondents. The similarity of responses across treatment groups suggests that respondents had firm beliefs on this topic that could not be swayed by the framing of the information they received beforehand. 
+
+There are a couple of possible explanations for the failure of the hypothesis. The first is that it is possible that the positively and negatively framed statements could have been possibly been more slanted to put an even heavier thumb on the scale before respondents answered the questions. Another possibility is that I underestimated the strength of respondents' existing views on this topic.
+
+If this survey were run again, I would seek to integrate the respondent's personal experience with academic services for those diagnosed with learning disabilities into the independent variable(s). I believe that this experience, when it exists, must be a strong driver of beliefs. While not an IV in this experiment, a cursory look into this line of questioning seems to provide some variance.
+
+```{r}
+ggplot(data, aes(fill = g10q1_new, y = g10q2_1, x = g10q1_new)) + 
+    geom_bar(position="dodge", stat="summary", fun = "mean") +
+  facet_wrap(~IV) + 
+  labs(x = "Academic Disability Experience",
+       y = "Mean Response to Question 2_1",
+       title = "Adequacy of Services in the United States") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(data, aes(fill = g10q1_new, y = g10q2_2, x = g10q1_new)) + 
+    geom_bar(position="dodge", stat="summary", fun = "mean") +
+  facet_wrap(~IV) + 
+  labs(x = "Academic Disability Experience",
+       y = "Mean Response to Question 2_2",
+       title = "Adequacy of Services in Your State of Residence") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(data, aes(fill = g10q1_new, y = g10q2_3, x = g10q1_new)) + 
+    geom_bar(position="dodge", stat="summary", fun = "mean") +
+  facet_wrap(~IV) + 
+  labs(x = "Academic Disability Experience",
+       y = "Mean Response to Question 2_3",
+       title = "Adequacy of Services in Your City/Town") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(data, aes(fill = g10q1_new, y = g10q3_1_numeric, x = g10q1_new)) + 
+    geom_bar(position="dodge", stat="summary", fun = "mean") +
+  facet_wrap(~IV) + 
+  labs(x = "Academic Disability Experience",
+       y = "Mean Level of Agreement",
+       title = "Additional Resources Should be Provided") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+It would also be interesting to track respondents' answers based upon the state that they live in and then control for if the state meets IDEA guidelines. 
+
+# Conclusion
+In conclusion, I was unable to reject the null hypothesis in this experiment and the hypothesis that the information that I provided would have a measurable impact on perceptions and support for academic services for those diagnosed with learning disabilities failed. While this hypothesis proved incorrect, I believe that this critical subject is worthy of further research. 
